@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react'
+
 import GradientBlinds from '@/components/GradientBlinds/GradientBlinds'
 
 const assets = {
@@ -10,6 +12,59 @@ const assets = {
 }
 
 function App() {
+  const shiqiRef = useRef<HTMLImageElement | null>(null)
+  const starsRef = useRef<HTMLImageElement | null>(null)
+
+  useEffect(() => {
+    let frame = 0
+    let targetX = 0
+    let targetY = 0
+    let currentX = 0
+    let currentY = 0
+
+    const applyTransforms = (x: number, y: number) => {
+      if (shiqiRef.current) {
+        shiqiRef.current.style.transform = `translateX(-50%) translate3d(${x * 5}px, ${y * 4}px, 0)`
+      }
+
+      if (starsRef.current) {
+        starsRef.current.style.transform = `translate3d(${x * 10}px, ${y * 8}px, 0)`
+      }
+    }
+
+    const animate = () => {
+      currentX += (targetX - currentX) * 0.08
+      currentY += (targetY - currentY) * 0.08
+
+      applyTransforms(currentX, currentY)
+      frame = requestAnimationFrame(animate)
+    }
+
+    const handlePointerMove = (event: PointerEvent) => {
+      targetX = (event.clientX / window.innerWidth - 0.5) * 2
+      targetY = (event.clientY / window.innerHeight - 0.5) * 2
+    }
+
+    const handlePointerLeave = () => {
+      targetX = 0
+      targetY = 0
+    }
+
+    applyTransforms(0, 0)
+    frame = requestAnimationFrame(animate)
+    window.addEventListener('pointermove', handlePointerMove)
+    window.addEventListener('pointerleave', handlePointerLeave)
+
+    return () => {
+      if (frame) {
+        cancelAnimationFrame(frame)
+      }
+
+      window.removeEventListener('pointermove', handlePointerMove)
+      window.removeEventListener('pointerleave', handlePointerLeave)
+    }
+  }, [])
+
   return (
     <main className="relative h-screen overflow-hidden bg-black text-white">
       <div className="fixed inset-0 z-0">
@@ -42,17 +97,20 @@ function App() {
             />
 
             <img
+              ref={starsRef}
               src={assets.stars}
               alt=""
-              className="absolute left-[65.35%] top-[22.44%] w-[9.03%] max-w-[130px] select-none"
+              className="absolute left-[65.35%] top-[22.44%] w-[9.03%] max-w-[130px] select-none will-change-transform"
               draggable="false"
             />
 
             <img
+              ref={shiqiRef}
               src={assets.shiqi}
               alt=""
-              className="absolute left-1/2 top-[27.7%] w-[34.4%] max-w-[490px] -translate-x-1/2 select-none"
+              className="absolute left-1/2 top-[27.7%] w-[34.4%] max-w-[490px] select-none will-change-transform"
               draggable="false"
+              style={{ transform: 'translateX(-50%) translate3d(0, 0, 0)' }}
             />
 
             <img
