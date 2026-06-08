@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 
-import GradientBlinds from '@/components/GradientBlinds/GradientBlinds'
+import Aurora from './components/Aurora/Aurora'
 
 const assets = {
   logo: '/home-assets/logo.png',
@@ -8,12 +8,25 @@ const assets = {
   signature: '/home-assets/signature.png',
   shiqi: '/home-assets/shiqi.png',
   work: '/home-assets/work.png',
-  stars: '/home-assets/stars.png',
+  starLarge: '/home-assets/star-small.png',
+  starSmall: '/home-assets/star-large.png',
 }
+
+const FOREGROUND_MOTION = {
+  damping: 0.04,
+  shiqi: { x: 4, y: 3 },
+  work: { x: 4, y: 3 },
+  starLarge: { x: 10, y: 8 },
+  starSmall: { x: 10, y: 8 },
+  signature: { x: 32, y: 20, damping: 0.07 },
+} as const
 
 function App() {
   const shiqiRef = useRef<HTMLImageElement | null>(null)
-  const starsRef = useRef<HTMLImageElement | null>(null)
+  const workRef = useRef<HTMLImageElement | null>(null)
+  const signatureRef = useRef<HTMLImageElement | null>(null)
+  const starLargeRef = useRef<HTMLImageElement | null>(null)
+  const starSmallRef = useRef<HTMLImageElement | null>(null)
 
   useEffect(() => {
     let frame = 0
@@ -21,22 +34,38 @@ function App() {
     let targetY = 0
     let currentX = 0
     let currentY = 0
+    let signatureCurrentX = 0
+    let signatureCurrentY = 0
 
-    const applyTransforms = (x: number, y: number) => {
+    const applyTransforms = (x: number, y: number, signatureX: number, signatureY: number) => {
       if (shiqiRef.current) {
-        shiqiRef.current.style.transform = `translateX(-50%) translate3d(${x * 5}px, ${y * 4}px, 0)`
+        shiqiRef.current.style.transform = `translateX(-50%) translate3d(${x * FOREGROUND_MOTION.shiqi.x}px, ${y * FOREGROUND_MOTION.shiqi.y}px, 0)`
       }
 
-      if (starsRef.current) {
-        starsRef.current.style.transform = `translate3d(${x * 10}px, ${y * 8}px, 0)`
+      if (workRef.current) {
+        workRef.current.style.transform = `translate3d(${x * FOREGROUND_MOTION.work.x}px, ${y * FOREGROUND_MOTION.work.y}px, 0)`
+      }
+
+      if (starLargeRef.current) {
+        starLargeRef.current.style.transform = `translate3d(${x * FOREGROUND_MOTION.starLarge.x}px, ${y * FOREGROUND_MOTION.starLarge.y}px, 0)`
+      }
+
+      if (starSmallRef.current) {
+        starSmallRef.current.style.transform = `translate3d(${x * FOREGROUND_MOTION.starSmall.x}px, ${y * FOREGROUND_MOTION.starSmall.y}px, 0)`
+      }
+
+      if (signatureRef.current) {
+        signatureRef.current.style.transform = `translate3d(${signatureX * FOREGROUND_MOTION.signature.x}px, ${signatureY * FOREGROUND_MOTION.signature.y}px, 0)`
       }
     }
 
     const animate = () => {
-      currentX += (targetX - currentX) * 0.08
-      currentY += (targetY - currentY) * 0.08
+      currentX += (targetX - currentX) * FOREGROUND_MOTION.damping
+      currentY += (targetY - currentY) * FOREGROUND_MOTION.damping
+      signatureCurrentX += (targetX - signatureCurrentX) * FOREGROUND_MOTION.signature.damping
+      signatureCurrentY += (targetY - signatureCurrentY) * FOREGROUND_MOTION.signature.damping
 
-      applyTransforms(currentX, currentY)
+      applyTransforms(currentX, currentY, signatureCurrentX, signatureCurrentY)
       frame = requestAnimationFrame(animate)
     }
 
@@ -50,7 +79,7 @@ function App() {
       targetY = 0
     }
 
-    applyTransforms(0, 0)
+    applyTransforms(0, 0, 0, 0)
     frame = requestAnimationFrame(animate)
     window.addEventListener('pointermove', handlePointerMove)
     window.addEventListener('pointerleave', handlePointerLeave)
@@ -67,23 +96,20 @@ function App() {
 
   return (
     <main className="relative h-screen overflow-hidden bg-black text-white">
-      <div className="fixed inset-0 z-0">
-        <GradientBlinds
-          className="absolute inset-0 h-full w-full"
-          gradientColors={['#ff601d', '#000000']}
-          angle={20}
-          noise={0.25}
-          blindCount={20}
-          blindMinWidth={60}
-          mouseDampening={0.3}
-          mirrorGradient={false}
-          spotlightRadius={0.5}
-          spotlightSoftness={1}
-          spotlightOpacity={1}
-          distortAmount={0}
-          shineDirection="left"
-        />
-        <div className="pointer-events-none absolute inset-0 bg-black/30" />
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-black">
+        <div
+          className="absolute inset-x-0 bottom-[calc(-18vh+20px)] h-[82vh] w-full"
+          style={{ transform: 'scale(-1.3, -1)' }}
+        >
+          <Aurora
+            colorStops={['#381000', '#DF7300', '#FF4800']}
+            amplitude={1.5}
+            blend={0.72}
+            speed={0.792}
+          />
+        </div>
+        <div className="film-noise absolute inset-0" />
+        <div className="absolute inset-0 bg-black/14" />
       </div>
 
       <section className="relative z-10 flex h-full items-center justify-center px-4 sm:px-6">
@@ -97,10 +123,18 @@ function App() {
             />
 
             <img
-              ref={starsRef}
-              src={assets.stars}
+              ref={starLargeRef}
+              src={assets.starLarge}
               alt=""
-              className="absolute left-[65.35%] top-[22.44%] w-[9.03%] max-w-[130px] select-none will-change-transform"
+              className="absolute left-[65.35%] top-[22.44%] w-[6.94%] max-w-[100px] select-none will-change-transform"
+              draggable="false"
+            />
+
+            <img
+              ref={starSmallRef}
+              src={assets.starSmall}
+              alt=""
+              className="absolute left-[71.25%] top-[28.21%] w-[2.92%] max-w-[42px] select-none will-change-transform"
               draggable="false"
             />
 
@@ -114,16 +148,18 @@ function App() {
             />
 
             <img
+              ref={workRef}
               src={assets.work}
               alt=""
-              className="absolute left-[6.25%] top-[40.22%] w-[85.55%] max-w-[1232px] select-none"
+              className="absolute left-[6.25%] top-[40.22%] w-[85.55%] max-w-[1232px] select-none will-change-transform"
               draggable="false"
             />
 
             <img
+              ref={signatureRef}
               src={assets.signature}
               alt=""
-              className="absolute left-[71.74%] top-[56.44%] w-[18.9%] max-w-[272px] select-none"
+              className="absolute left-[71.39%] top-[55.55%] w-[18.9%] max-w-[272px] select-none will-change-transform"
               draggable="false"
             />
 
